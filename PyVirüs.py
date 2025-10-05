@@ -234,7 +234,7 @@ class AntivirusApp(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Modern Antivirus Scanner Pro")
+        self.setWindowTitle("Oxynos Antivirus Scanner Pro")
         self.setGeometry(100, 100, 900, 700)
         self.setMinimumSize(800, 600)
         
@@ -301,7 +301,7 @@ class AntivirusApp(QWidget):
         # Başlık metinleri
         text_layout = QVBoxLayout()
         
-        title_label = QLabel("Modern Antivirus Scanner Pro")
+        title_label = QLabel("Oxynos Antivirus Scanner Pro")
         title_label.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
         
         subtitle_label = QLabel("Bilgisayarınızı güvende tutun")
@@ -364,7 +364,7 @@ class AntivirusApp(QWidget):
         control_layout.setSpacing(15)
         
         # Ana tarama butonu
-        self.scanButton = ModernButton("🔍 Dizin Tara", "#4CAF50", "#45a049")
+        self.scanButton = ModernButton("🔍 Dosya Tara", "#4CAF50", "#45a049")
         self.scanButton.clicked.connect(self.scanDirectory)
         
         control_layout.addWidget(self.scanButton, 0, 0, 1, 3)
