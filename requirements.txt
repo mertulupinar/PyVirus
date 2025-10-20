@@ -1,0 +1,14 @@
+# PyVirus - Oxynos Antivirus Scanner Pro
+# Gereksinimler
+# Created by Oxynos
+
+# GUI Framework
+PyQt5>=5.15.0
+
+# Test Framework (Opsiyonel)
+# pytest>=7.0.0
+# pytest-cov>=3.0.0
+
+# Type Checking (Opsiyonel)
+# mypy>=0.990
+

@@ -1,137 +1,341 @@
-import sys,os,hashlib,json,shutil,csv
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+import sys
+import os
+import hashlib
+import json
+import shutil
+import csv
+import logging
+from datetime import datetime
+from typing import Set, Optional, Tuple, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QProgressBar,
+                              QTableWidget, QTableWidgetItem, QFileDialog, 
+                              QMessageBox, QVBoxLayout, QHBoxLayout, QGridLayout,
+                              QLabel, QFrame, QAbstractItemView, QInputDialog, QStyle)
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtGui import QColor, QCursor
 
-# ======================
-# Created by Oxynos 
-# ======================
 
-VIRUS_DB_FILE = "./virus_signatures"
+
+VIRUS_DB_FILE = "./virus_signatures.json"
 QUARANTINE_FOLDER = "quarantine"
+LOG_FILE = "antivirus.log"
 
-def load_virus_signatures():
+# Loglama konfigürasyonu
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('OxynosAV')
+
+# Global cache için
+_virus_signatures_cache: Optional[Set[str]] = None
+_cache_timestamp: float = 0
+
+def load_virus_signatures() -> Set[str]:
     """
-    Virus imzalarını yükler.
-    Eğer JSON dosyası varsa ordan yükler,
-    eğer TXT dosyası varsa satır satır okuyup sete dönüştürür.
+    Virus imzalarını cache'den veya dosyadan yükler.
+    Cache mekanizması ile performansı artırır.
     """
-    # Öncelikle .json var mı diye kontrol et
-    json_file = VIRUS_DB_FILE + ".json"
-    txt_file = VIRUS_DB_FILE + ".txt"
-
-    if os.path.exists(json_file):
-        with open(json_file, "r", encoding="utf-8") as f:
-            return set(json.load(f))
-
-    elif os.path.exists(txt_file):
-        with open(txt_file, "r", encoding="utf-8") as f:
-            # Boş satırları at ve hashleri topla
-            return set(line.strip() for line in f if line.strip())
-
-    else:
+    global _virus_signatures_cache, _cache_timestamp
+    
+    # Cache kontrolü (dosya değişmişse yeniden yükle)
+    if os.path.exists(VIRUS_DB_FILE):
+        file_mtime = os.path.getmtime(VIRUS_DB_FILE)
+        if _virus_signatures_cache is not None and _cache_timestamp >= file_mtime:
+            logger.debug("Virus imzaları cache'den yüklendi")
+            return _virus_signatures_cache
+        
+        try:
+            with open(VIRUS_DB_FILE, "r", encoding="utf-8") as f:
+                _virus_signatures_cache = set(json.load(f))
+                _cache_timestamp = file_mtime
+                logger.info(f"{len(_virus_signatures_cache)} virus imzası yüklendi")
+                return _virus_signatures_cache
+        except (json.JSONDecodeError, IOError) as e:
+            logger.error(f"Virus imza dosyası yüklenemedi: {e}")
+            return set()
+    
         # Dosya yoksa boş set döndür
-        return set()
+    logger.warning("Virus imza dosyası bulunamadı, boş set döndürülüyor")
+    _virus_signatures_cache = set()
+    _cache_timestamp = 0
+    return _virus_signatures_cache
 
-def save_virus_signatures(signatures):
-    with open(VIRUS_DB_FILE, "w") as f:
-        json.dump(list(signatures), f, indent=4)
+def save_virus_signatures(signatures: Set[str]) -> None:
+    """İmzaları dosyaya kaydeder ve cache'i günceller."""
+    global _virus_signatures_cache, _cache_timestamp
+    
+    try:
+        with open(VIRUS_DB_FILE, "w", encoding="utf-8") as f:
+            json.dump(sorted(list(signatures)), f, indent=2, ensure_ascii=False)
+        
+        # Cache'i güncelle
+        _virus_signatures_cache = signatures.copy()
+        _cache_timestamp = os.path.getmtime(VIRUS_DB_FILE)
+        logger.info(f"{len(signatures)} virus imzası kaydedildi")
+    except IOError as e:
+        logger.error(f"İmza dosyası kaydedilemedi: {e}")
 
-def update_virus_signatures(new_signatures):
+def update_virus_signatures(new_signatures: Set[str]) -> None:
+    """Yeni imzaları mevcut imzalara ekler."""
     signatures = load_virus_signatures()
+    old_count = len(signatures)
     signatures.update(new_signatures)
+    new_count = len(signatures) - old_count
     save_virus_signatures(signatures)
+    logger.info(f"{new_count} yeni virus imzası eklendi")
 
-def remove_virus_signature(signature):
+def remove_virus_signature(signature: str) -> bool:
+    """Belirtilen imzayı siler."""
     signatures = load_virus_signatures()
     if signature in signatures:
         signatures.remove(signature)
         save_virus_signatures(signatures)
+        logger.info(f"Virus imzası silindi: {signature[:16]}...")
         return True
+    logger.warning(f"Silinmek istenen imza bulunamadı: {signature[:16]}...")
     return False
 
-def calculate_sha256(path):
-    hash_sha256 = hashlib.sha256()
+def calculate_hash(path: str, algorithm: str = 'md5') -> Optional[str]:
+    """
+    Dosyanın hash değerini hesaplar.
+    Varsayılan olarak MD5 kullanır (virus signatures ile uyumlu).
+    """
+    hash_func = hashlib.md5() if algorithm == 'md5' else hashlib.sha256()
+    
     try:
         with open(path, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_sha256.update(chunk)
-        return hash_sha256.hexdigest()
-    except Exception:
+            # Büyük dosyalar için optimize edilmiş chunk size (64KB)
+            for chunk in iter(lambda: f.read(65536), b""):
+                hash_func.update(chunk)
+        return hash_func.hexdigest()
+    except (IOError, OSError, PermissionError):
         return None
 
-def scan_file(path):
-    file_hash = calculate_sha256(path)
-    virus_signatures = load_virus_signatures()
-
+def scan_file(path: str, virus_signatures: Optional[Set[str]] = None) -> Tuple[str, bool]:
+    """
+    Dosyayı tarar ve virüs olup olmadığını kontrol eder.
+    virus_signatures parametresi ile imzalar tekrar yüklenmez.
+    """
+    if virus_signatures is None:
+        virus_signatures = load_virus_signatures()
+    
+    file_hash = calculate_hash(path)
+    
     if file_hash is None:
+        logger.debug(f"Hash hesaplanamadı: {path}")
         return path, False
 
     is_virus = file_hash in virus_signatures
+    
+    if is_virus:
+        logger.warning(f"Virüs tespit edildi! Dosya: {path}, Hash: {file_hash}")
+    else:
+        logger.debug(f"Temiz dosya: {path}")
+    
     return path, is_virus
 
-def move_to_quarantine(file_path):
-    if not os.path.exists(QUARANTINE_FOLDER):
-        os.makedirs(QUARANTINE_FOLDER)
+def move_to_quarantine(file_path: str) -> str:
+    """Dosyayı karantina klasörüne taşır."""
+    os.makedirs(QUARANTINE_FOLDER, exist_ok=True)
+    
     filename = os.path.basename(file_path)
     quarantine_path = os.path.join(QUARANTINE_FOLDER, filename)
+    
+    # Aynı isimde dosya varsa benzersiz isim oluştur
+    counter = 1
+    base, ext = os.path.splitext(filename)
+    while os.path.exists(quarantine_path):
+        quarantine_path = os.path.join(QUARANTINE_FOLDER, f"{base}_{counter}{ext}")
+        counter += 1
+    
     shutil.move(file_path, quarantine_path)
+    logger.info(f"Dosya karantinaya alındı: {file_path} -> {quarantine_path}")
     return quarantine_path
+
+# ======================
+# Paralel Tarama Fonksiyonları
+# ======================
+
+def scan_file_parallel(file_path: str, virus_signatures: Set[str]) -> Tuple[str, bool]:
+    """Paralel tarama için optimize edilmiş dosya tarama fonksiyonu."""
+    try:
+        return scan_file(file_path, virus_signatures)
+    except Exception as e:
+        logger.error(f"Dosya tarama hatası: {file_path} - {e}")
+        return file_path, False
+
+def scan_files_parallel(files: List[str], virus_signatures: Set[str], max_workers: int = 4) -> List[Tuple[str, bool]]:
+    """
+    Dosyaları paralel olarak tarar.
+    max_workers: Aynı anda çalışacak thread sayısı (varsayılan 4)
+    """
+    results = []
+    total = len(files)
+    
+    logger.info(f"{total} dosya paralel tarama başlatılıyor ({max_workers} thread ile)")
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_file = {
+            executor.submit(scan_file_parallel, file_path, virus_signatures): file_path 
+            for file_path in files
+        }
+        
+        for future in as_completed(future_to_file):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                file_path = future_to_file[future]
+                logger.error(f"Thread hatası: {file_path} - {e}")
+                results.append((file_path, False))
+    
+    logger.info(f"Paralel tarama tamamlandı: {len(results)} dosya tarandı")
+    return results
 
 # ======================
 # Tarama Thread'i
 # ======================
 
 class ScanThread(QThread):
+    """Asenkron dosya tarama thread'i."""
     progress = pyqtSignal(int)
     result = pyqtSignal(str, bool)
     finished = pyqtSignal()
 
-    def __init__(self, path, scan_type='directory'):
+    def __init__(self, path: str, scan_type: str = 'directory', parallel: bool = True, max_workers: int = 4):
         super().__init__()
         self.path = path
         self.scan_type = scan_type
+        self._is_running = True
+        self.parallel = parallel  # Paralel tarama aktif mi
+        self.max_workers = max_workers  # Thread sayısı
 
     def run(self):
-        files = []
-        if self.scan_type == 'file':
-            files = [self.path]
-        elif self.scan_type == 'directory':
-            files = self.get_files_in_directory(self.path)
-
-        total_files = len(files) or 1
-
+        """Tarama işlemini başlatır."""
+        logger.info(f"Tarama başlatıldı: {self.path} (Paralel: {self.parallel})")
+        
+        # Virus imzalarını bir kere yükle (performans optimizasyonu)
+        virus_signatures = load_virus_signatures()
+        
+        files = self._get_files()
+        if not files:
+            logger.warning("Taranacak dosya bulunamadı")
+            self.finished.emit()
+            return
+        
+        total_files = len(files)
+        logger.info(f"Toplam {total_files} dosya taranacak")
+        
+        if self.parallel and total_files > 10:
+            # Paralel tarama (10'dan fazla dosya için)
+            self._run_parallel_scan(files, virus_signatures, total_files)
+        else:
+            # Seri tarama
+            self._run_serial_scan(files, virus_signatures, total_files)
+        
+        logger.info("Tarama tamamlandı")
+        self.finished.emit()
+    
+    def _run_serial_scan(self, files: List[str], virus_signatures: Set[str], total_files: int):
+        """Seri tarama modu."""
         for index, file_path in enumerate(files):
-            path, is_virus = scan_file(file_path)
+            if not self._is_running:
+                break
+            
+            path, is_virus = scan_file(file_path, virus_signatures)
             self.result.emit(path, is_virus)
+            
             progress_percent = int((index + 1) / total_files * 100)
             self.progress.emit(progress_percent)
 
-        self.finished.emit()
-
-    def get_files_in_directory(self, path):
+    def _run_parallel_scan(self, files: List[str], virus_signatures: Set[str], total_files: int):
+        """Paralel tarama modu."""
+        completed = 0
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_file = {
+                executor.submit(scan_file_parallel, file_path, virus_signatures): file_path 
+                for file_path in files
+            }
+            
+            for future in as_completed(future_to_file):
+                if not self._is_running:
+                    executor.shutdown(wait=False)
+                    break
+                
+                try:
+                    path, is_virus = future.result()
+                    self.result.emit(path, is_virus)
+                    
+                    completed += 1
+                    progress_percent = int(completed / total_files * 100)
+                    self.progress.emit(progress_percent)
+                except Exception as e:
+                    file_path = future_to_file[future]
+                    logger.error(f"Paralel tarama hatası: {file_path} - {e}")
+                    self.result.emit(file_path, False)
+    
+    def _get_files(self) -> list:
+        """Taranacak dosya listesini döndürür."""
+        if self.scan_type == 'file':
+            return [self.path] if os.path.isfile(self.path) else []
+        elif self.scan_type == 'directory':
+            return self._get_files_in_directory(self.path)
+        return []
+    
+    def _get_files_in_directory(self, path: str) -> list:
+        """Dizindeki tüm dosyaları recursive olarak toplar."""
         all_files = []
-        for root, _, files in os.walk(path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                all_files.append(file_path)
+        try:
+            for root, _, files in os.walk(path):
+                for file in files:
+                    if not self._is_running:
+                        break
+                    file_path = os.path.join(root, file)
+                    all_files.append(file_path)
+        except (OSError, PermissionError) as e:
+            logger.error(f"Dizin taranamadı: {e}")
+        
         return all_files
+    
+    def stop(self):
+        """Taramayı durdurur."""
+        self._is_running = False
 
 class ModernButton(QPushButton):
-    """Modern özelleştirilmiş buton"""
-    def __init__(self, text, color="#4CAF50", hover_color="#45a049"):
+    """Modern özelleştirilmiş buton."""
+    
+    # Renk haritası - sınıf değişkeni olarak tanımla
+    _COLOR_MAP = {
+        "#4CAF50": ("#3d8b40", "#357a35"),  # (dark, darker)
+        "#2196F3": ("#1976D2", "#1565C0"),
+        "#FF9800": ("#F57C00", "#E65100"),
+        "#f44336": ("#d32f2f", "#c62828")
+    }
+    
+    def __init__(self, text: str, color: str = "#4CAF50", hover_color: str = "#45a049"):
         super().__init__(text)
         self.color = color
         self.hover_color = hover_color
         self.setFixedHeight(50)
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        self.setStyleSheet(self.get_style())
+        self.setStyleSheet(self._get_style())
+    
+    def _get_style(self) -> str:
+        """Buton stilini oluşturur."""
+        dark_color = self._darken_color(self.color)
+        dark_hover = self._darken_color(self.hover_color)
         
-    def get_style(self):
         return f"""
             QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 {self.color}, stop:1 {self.darken_color(self.color)});
+                    stop:0 {self.color}, stop:1 {dark_color});
                 color: white;
                 border: none;
                 border-radius: 25px;
@@ -141,26 +345,25 @@ class ModernButton(QPushButton):
             }}
             QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 {self.hover_color}, stop:1 {self.darken_color(self.hover_color)});
+                    stop:0 {self.hover_color}, stop:1 {dark_hover});
             }}
             QPushButton:pressed {{
-                background: {self.darken_color(self.hover_color)};
+                background: {dark_hover};
             }}
         """
     
-    def darken_color(self, color):
-        """Rengi koyulaştır"""
-        color_map = {
-            "#4CAF50": "#3d8b40",
-            "#45a049": "#357a35",
-            "#2196F3": "#1976D2",
-            "#1976D2": "#1565C0",
-            "#FF9800": "#F57C00",
-            "#F57C00": "#E65100",
-            "#f44336": "#d32f2f",
-            "#d32f2f": "#c62828"
-        }
-        return color_map.get(color, "#333333")
+    def _darken_color(self, color: str) -> str:
+        """Rengi koyulaştır."""
+        if color in self._COLOR_MAP:
+            return self._COLOR_MAP[color][0]
+        # Fallback: manuel koyulaştırma
+        try:
+            color = color.lstrip('#')
+            rgb = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+            darkened = tuple(max(0, int(c * 0.8)) for c in rgb)
+            return f"#{darkened[0]:02x}{darkened[1]:02x}{darkened[2]:02x}"
+        except ValueError:
+            return "#333333"
 
 class AnimatedProgressBar(QProgressBar):
     """Animasyonlu progress bar"""
@@ -593,11 +796,12 @@ class AntivirusApp(QWidget):
     # İmza İşlemleri
     # ======================
     def addSignature(self):
+        """Yeni virus imzası ekler."""
         file_path, _ = QFileDialog.getOpenFileName(self, "İmza için Dosya Seç")
         if not file_path:
             return
 
-        file_hash = calculate_sha256(file_path)
+        file_hash = calculate_hash(file_path, algorithm='md5')
         if file_hash:
             update_virus_signatures({file_hash})
             QMessageBox.information(self, "Başarılı", f"İmza eklendi:\n{file_hash}")
@@ -621,26 +825,32 @@ class AntivirusApp(QWidget):
     # 📊 Rapor Kaydetme
     # ======================
     def saveReport(self):
+        """Tarama raporunu JSON veya CSV formatında kaydeder."""
         if self.resultTable.rowCount() == 0:
             QMessageBox.information(self, "Bilgi", "Kaydedilecek rapor bulunmamaktadır.")
             return
 
-        file_path, _ = QFileDialog.getSaveFileName(self, "Raporu Kaydet", "", "JSON Files (*.json);;CSV Files (*.csv)")
-        if not file_path:
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "Raporu Kaydet", "", 
+            "JSON Files (*.json);;CSV Files (*.csv)"
+        )
+        if not save_path:
             return
 
         try:
+            # Sonuçları topla
             results = []
             for row in range(self.resultTable.rowCount()):
-                file_path_item = self.resultTable.item(row, 0).text()
+                file_item = self.resultTable.item(row, 0).text()
                 status_item = self.resultTable.item(row, 1).text()
-                results.append({"dosya": file_path_item, "durum": status_item})
+                results.append({"dosya": file_item, "durum": status_item})
 
-            if file_path.endswith(".json"):
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(results, f, indent=4, ensure_ascii=False)
-            elif file_path.endswith(".csv"):
-                with open(file_path, "w", newline="", encoding="utf-8") as f:
+            # Dosya formatına göre kaydet
+            if save_path.endswith(".json"):
+                with open(save_path, "w", encoding="utf-8") as f:
+                    json.dump(results, f, indent=2, ensure_ascii=False)
+            elif save_path.endswith(".csv"):
+                with open(save_path, "w", newline="", encoding="utf-8") as f:
                     writer = csv.DictWriter(f, fieldnames=["dosya", "durum"])
                     writer.writeheader()
                     writer.writerows(results)
@@ -648,7 +858,7 @@ class AntivirusApp(QWidget):
                 QMessageBox.warning(self, "Uyarı", "Dosya uzantısı desteklenmiyor (.json veya .csv seçin).")
                 return
 
-            QMessageBox.information(self, "Başarılı", f"Rapor kaydedildi:\n{file_path}")
+            QMessageBox.information(self, "Başarılı", f"Rapor kaydedildi:\n{save_path}")
         except Exception as e:
             QMessageBox.critical(self, "Hata", f"Rapor kaydedilemedi:\n{str(e)}")
 
