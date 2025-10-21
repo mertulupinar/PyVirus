@@ -36,9 +36,9 @@
 
 ## 🎯 Overview
 
-**PyVirus - Oxynos Antivirus Scanner Pro** is an enterprise-grade antivirus scanning solution 
-developed using modern Python technologies. It provides a powerful security solution with 
-MD5 hash-based signature comparison, parallel file scanning, real-time logging, and a 
+**PyVirus - Oxynos Antivirus Scanner Pro** is an enterprise-grade antivirus scanning solution
+developed using modern Python technologies. It provides a powerful security solution with
+MD5 hash-based signature comparison, parallel file scanning, real-time logging, and a
 user-friendly PyQt5 interface.
 
 ### 🌟 Why PyVirus?
@@ -56,14 +56,14 @@ user-friendly PyQt5 interface.
 
 ### 🔍 Scanning Features
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **Hash-Based Scanning** | MD5/SHA256 hash comparison | ✅ Active |
-| **Parallel Scanning** | Concurrent file scanning with 4 threads | ✅ Active |
-| **Recursive Directory Scan** | Scan subdirectories too | ✅ Active |
-| **Real-time Progress** | Live progress indicator | ✅ Active |
-| **Virus Database Cache** | Fast access with memory cache | ✅ Active |
-| **Smart File Detection** | Intelligent file type detection | ✅ Active |
+| Feature                      | Description                             | Status    |
+| ---------------------------- | --------------------------------------- | --------- |
+| **Hash-Based Scanning**      | MD5/SHA256 hash comparison              | ✅ Active |
+| **Parallel Scanning**        | Concurrent file scanning with 4 threads | ✅ Active |
+| **Recursive Directory Scan** | Scan subdirectories too                 | ✅ Active |
+| **Real-time Progress**       | Live progress indicator                 | ✅ Active |
+| **Virus Database Cache**     | Fast access with memory cache           | ✅ Active |
+| **Smart File Detection**     | Intelligent file type detection         | ✅ Active |
 
 ### 🛡️ Security Features
 
@@ -91,41 +91,51 @@ user-friendly PyQt5 interface.
 ## ⚡ Performance Optimizations
 
 ### 1. 🗂️ Cache Mechanism
+
 ```python
 # Global cache system
 _virus_signatures_cache: Optional[Set[str]] = None
 _cache_timestamp: float = 0
 ```
+
 **Result**: %90+ faster signature loading
 
 ### 2. 🔀 Multi-Threading
+
 ```python
 # Parallel scanning with ThreadPoolExecutor
 with ThreadPoolExecutor(max_workers=4) as executor:
     futures = [executor.submit(scan_file, f) for f in files]
 ```
+
 **Result**: 4x faster file scanning
 
 ### 3. 📦 Optimized Chunk Size
+
 ```python
 # 64KB chunk size (4KB → 64KB)
 for chunk in iter(lambda: f.read(65536), b""):
     hash_func.update(chunk)
 ```
+
 **Result**: 16x faster hash calculation
 
 ### 4. 🎯 Type Hints & Annotations
+
 ```python
 def calculate_hash(path: str, algorithm: str = 'md5') -> Optional[str]:
     """Type-safe function definitions"""
 ```
+
 **Result**: Compile-time error detection and IDE support
 
 ### 5. 🔄 Asynchronous Operations
+
 ```python
 class ScanThread(QThread):
     """Asynchronous scanning with non-blocking UI"""
 ```
+
 **Result**: UI freezing eliminated
 
 ---
@@ -141,7 +151,7 @@ class ScanThread(QThread):
 ### Step 1: Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/pyvirus.git
+git clone https://github.com/mertulupinar/PyVirus
 cd pyvirus
 ```
 
@@ -152,6 +162,7 @@ pip install -r requirements.txt
 ```
 
 **requirements.txt contents:**
+
 ```txt
 PyQt5>=5.15.0
 ```
@@ -177,6 +188,7 @@ python PyVirüs.py
 ### 🖥️ GUI Usage
 
 #### 1. Directory Scanning
+
 ```
 1. Click "🔍 Scan Files" button
 2. Select the directory you want to scan
@@ -185,6 +197,7 @@ python PyVirüs.py
 ```
 
 #### 2. Quarantine
+
 ```
 1. Select an infected file in the table
 2. Click "🔒 Quarantine" button
@@ -192,12 +205,14 @@ python PyVirüs.py
 ```
 
 #### 3. Signature Management
+
 ```
 ➕ Add Signature: Adds hash of new files to database
 ➖ Remove Signature: Removes existing signatures from database
 ```
 
 #### 4. Report Generation
+
 ```
 1. Click "💾 Save Report" button
 2. Select JSON or CSV format
@@ -207,6 +222,7 @@ python PyVirüs.py
 ### 📝 Programmatic Usage
 
 #### Basic Scanning
+
 ```python
 from PyVirüs import scan_file, load_virus_signatures
 
@@ -223,6 +239,7 @@ else:
 ```
 
 #### Parallel Scanning
+
 ```python
 from PyVirüs import scan_files_parallel, load_virus_signatures
 
@@ -239,6 +256,7 @@ for path, is_virus in results:
 ```
 
 #### Signature Update
+
 ```python
 from PyVirüs import update_virus_signatures
 
@@ -248,6 +266,7 @@ update_virus_signatures(new_hashes)
 ```
 
 #### Cloud Update
+
 ```python
 from cloud_updater import CloudUpdater
 from PyVirüs import load_virus_signatures, save_virus_signatures
@@ -355,12 +374,14 @@ User Action
 Calculate file hash.
 
 **Parameters:**
+
 - `path`: File path
 - `algorithm`: Hash algorithm ('md5' or 'sha256')
 
 **Returns:** Hash string or None (on error)
 
 **Example:**
+
 ```python
 hash_val = calculate_hash("/path/file.exe", algorithm='md5')
 print(f"MD5: {hash_val}")
@@ -373,12 +394,14 @@ print(f"MD5: {hash_val}")
 Scan file against virus signatures.
 
 **Parameters:**
+
 - `path`: File path to scan
 - `virus_signatures`: Signature set (auto-loaded if None)
 
 **Returns:** (file_path, is_infected) tuple
 
 **Example:**
+
 ```python
 path, is_infected = scan_file("/path/suspicious.exe")
 if is_infected:
@@ -394,6 +417,7 @@ Load virus signatures (with cache support).
 **Returns:** Set of hash strings
 
 **Example:**
+
 ```python
 sigs = load_virus_signatures()
 print(f"Loaded {len(sigs)} signatures")
@@ -406,6 +430,7 @@ print(f"Loaded {len(sigs)} signatures")
 Scan files in parallel.
 
 **Parameters:**
+
 - `files`: List of file paths
 - `virus_signatures`: Signature set
 - `max_workers`: Number of threads
@@ -413,6 +438,7 @@ Scan files in parallel.
 **Returns:** List of (file, is_infected) tuples
 
 **Example:**
+
 ```python
 files = ["/path/f1.exe", "/path/f2.dll"]
 sigs = load_virus_signatures()
@@ -428,6 +454,7 @@ results = scan_files_parallel(files, sigs, max_workers=8)
 Main application window.
 
 **Methods:**
+
 - `scanDirectory()`: Opens directory scanning dialog
 - `addSignature()`: Adds new signature
 - `removeSignature()`: Removes signature
@@ -441,12 +468,14 @@ Main application window.
 Asynchronous scanning thread.
 
 **Parameters:**
+
 - `path`: Path to scan
 - `scan_type`: 'file' or 'directory'
 - `parallel`: Enable parallel scanning (bool)
 - `max_workers`: Number of threads
 
 **Signals:**
+
 - `progress(int)`: Progress percentage
 - `result(str, bool)`: File result
 - `finished()`: Scanning completed
@@ -471,6 +500,7 @@ python -m unittest test_antivirus.TestHashCalculation
 ### Test Categories
 
 #### 1. Hash Calculation Tests
+
 ```python
 class TestHashCalculation(unittest.TestCase):
     - test_md5_hash()           # MD5 calculation
@@ -479,6 +509,7 @@ class TestHashCalculation(unittest.TestCase):
 ```
 
 #### 2. Virus Signatures Tests
+
 ```python
 class TestVirusSignatures(unittest.TestCase):
     - test_save_and_load_signatures()  # Save/load
@@ -488,6 +519,7 @@ class TestVirusSignatures(unittest.TestCase):
 ```
 
 #### 3. File Scan Tests
+
 ```python
 class TestFileScan(unittest.TestCase):
     - test_scan_clean_file()    # Clean file
@@ -495,12 +527,14 @@ class TestFileScan(unittest.TestCase):
 ```
 
 #### 4. Quarantine Tests
+
 ```python
 class TestQuarantine(unittest.TestCase):
     - test_move_to_quarantine() # Quarantine move
 ```
 
 #### 5. Performance Tests
+
 ```python
 class TestPerformance(unittest.TestCase):
     - test_cache_performance()  # Cache performance
@@ -525,19 +559,19 @@ TOTAL                         535         31        94%
 
 Test Environment: Intel i7-9700K, 16GB RAM, SSD
 
-| Scenario | File Count | Serial Scan | Parallel Scan | Improvement |
-|----------|------------|-------------|---------------|-------------|
-| Small Files | 100 | 2.5s | 0.8s | **3.1x** |
-| Medium Files | 500 | 12.3s | 3.9s | **3.2x** |
-| Large Files | 1000 | 24.7s | 7.1s | **3.5x** |
-| Very Large | 5000 | 118s | 32s | **3.7x** |
+| Scenario     | File Count | Serial Scan | Parallel Scan | Improvement |
+| ------------ | ---------- | ----------- | ------------- | ----------- |
+| Small Files  | 100        | 2.5s        | 0.8s          | **3.1x**    |
+| Medium Files | 500        | 12.3s       | 3.9s          | **3.2x**    |
+| Large Files  | 1000       | 24.7s       | 7.1s          | **3.5x**    |
+| Very Large   | 5000       | 118s        | 32s           | **3.7x**    |
 
 ### Cache Improvement
 
-| Operation | No Cache | With Cache | Improvement |
-|-----------|----------|------------|-------------|
-| Load Signatures (10K) | 85ms | 0.3ms | **283x** |
-| Load Signatures (100K) | 850ms | 0.3ms | **2833x** |
+| Operation              | No Cache | With Cache | Improvement |
+| ---------------------- | -------- | ---------- | ----------- |
+| Load Signatures (10K)  | 85ms     | 0.3ms      | **283x**    |
+| Load Signatures (100K) | 850ms    | 0.3ms      | **2833x**   |
 
 ---
 
@@ -546,22 +580,26 @@ Test Environment: Intel i7-9700K, 16GB RAM, SSD
 We welcome your contributions! Here's how to contribute:
 
 ### 1. Fork & Clone
+
 ```bash
-git clone https://github.com/yourusername/pyvirus.git
+git clone https://github.com/mertulupinar/PyVirus
 cd pyvirus
 ```
 
 ### 2. Create Branch
+
 ```bash
 git checkout -b feature/amazing-feature
 ```
 
 ### 3. Commit Changes
+
 ```bash
 git commit -m "feat: Add amazing feature"
 ```
 
 ### 4. Push & Pull Request
+
 ```bash
 git push origin feature/amazing-feature
 ```
@@ -582,6 +620,7 @@ git push origin feature/amazing-feature
 ### v2.0.0 (2025-10-20) - Major Update
 
 #### ✨ New Features
+
 - ✅ Multi-threading support (4x parallel scanning)
 - ✅ Comprehensive logging system (logging module)
 - ✅ Cloud-based signature updates
@@ -589,6 +628,7 @@ git push origin feature/amazing-feature
 - ✅ Cache mechanism (283x faster)
 
 #### 🔧 Improvements
+
 - ✅ Type hints added
 - ✅ Docstrings updated
 - ✅ Error handling improved
@@ -596,6 +636,7 @@ git push origin feature/amazing-feature
 - ✅ Import structure organized
 
 #### 🐛 Fixes
+
 - ✅ Quarantine file conflict fixed
 - ✅ Progress bar accuracy improved
 - ✅ UI freezing issues resolved
