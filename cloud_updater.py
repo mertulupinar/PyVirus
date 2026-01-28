@@ -1,8 +1,8 @@
 """
-PyVirus - Oxynos Antivirus Scanner Pro
+PyVirus - Mert Ulupınar Antivirus Scanner Pro
 Bulut Tabanlı İmza Güncelleme Modülü
 
-Created by Oxynos
+Created by Mert Ulupınar
 """
 
 import os
@@ -13,7 +13,7 @@ from typing import Set, Optional
 from datetime import datetime
 from urllib import request, error
 
-logger = logging.getLogger('OxynosAV.CloudUpdater')
+logger = logging.getLogger('Mert Ulupınar.CloudUpdater')
 
 # Bulut güncelleme ayarları
 CLOUD_UPDATE_URL = "https://raw.githubusercontent.com/example/virus-signatures/main/signatures.json"
@@ -76,7 +76,7 @@ class CloudUpdater:
             
             req = request.Request(
                 self.update_url,
-                headers={'User-Agent': 'OxynosAV/1.0'}
+                headers={'User-Agent': 'Mert Ulupınar/1.0'}
             )
             
             with request.urlopen(req, timeout=timeout) as response:
@@ -168,7 +168,7 @@ def demo_update():
     """Demo güncelleme işlemi."""
     print("=" * 70)
     print("PyVirus - Cloud Updater Demo")
-    print("Created by Oxynos")
+    print("Created by Mert Ulupınar")
     print("=" * 70)
     print()
     

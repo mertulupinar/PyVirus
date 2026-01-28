@@ -30,7 +30,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger('OxynosAV')
+logger = logging.getLogger('Mert Ulupınar')
 
 # Global cache için
 _virus_signatures_cache: Optional[Set[str]] = None
@@ -437,7 +437,7 @@ class AntivirusApp(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Oxynos Antivirus Scanner Pro")
+        self.setWindowTitle("Mert Ulupınar Antivirus Scanner Pro")
         self.setGeometry(100, 100, 900, 700)
         self.setMinimumSize(800, 600)
         
@@ -504,7 +504,7 @@ class AntivirusApp(QWidget):
         # Başlık metinleri
         text_layout = QVBoxLayout()
         
-        title_label = QLabel("Oxynos Antivirus Scanner Pro")
+        title_label = QLabel("Mert Ulupınar Antivirus Scanner Pro")
         title_label.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
         
         subtitle_label = QLabel("Bilgisayarınızı güvende tutun")

@@ -1,8 +1,8 @@
 # 📝 Changelog
 
-**PyVirus - Oxynos Antivirus Scanner Pro**
+**PyVirus - Mert Ulupınar Antivirus Scanner Pro**
 
-Created by Oxynos ⚡
+Created by Mert Ulupınar ⚡
 
 ---
 
@@ -147,7 +147,7 @@ This release includes a complete redesign of PyVirus.
 
 <div align="center">
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 [⬆ Back to Top](#-changelog)
 

@@ -1,6 +1,6 @@
-# PyVirus - Oxynos Antivirus Scanner Pro
+# PyVirus - Mert Ulupınar Antivirus Scanner Pro
 # Gereksinimler
-# Created by Oxynos
+# Created by Mert Ulupınar
 
 # GUI Framework
 PyQt5>=5.15.0

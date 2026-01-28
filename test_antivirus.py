@@ -1,8 +1,8 @@
 """
-PyVirus - Oxynos Antivirus Scanner Pro
+PyVirus - Mert Ulupınar Antivirus Scanner Pro
 Unit Test Dosyası
 
-Created by Oxynos
+Created by Mert Ulupınar
 """
 
 import unittest
@@ -232,9 +232,9 @@ def run_tests():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print("PyVirus - Oxynos Antivirus Scanner Pro")
+    print("PyVirus - Mert Ulupınar Antivirus Scanner Pro")
     print("Unit Test Suite")
-    print("Created by Oxynos")
+    print("Created by Mert Ulupınar")
     print("=" * 70)
     print()
     

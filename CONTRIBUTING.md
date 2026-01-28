@@ -1,6 +1,6 @@
 # 🤝 Contributing to PyVirus
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 Thank you for your interest in contributing to PyVirus! This document provides guidelines and instructions for contributing.
 
@@ -379,7 +379,7 @@ Thank you for contributing to PyVirus! Your efforts help make this project bette
 
 <div align="center">
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 Questions? Open an issue or discussion!
 

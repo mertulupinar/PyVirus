@@ -1,8 +1,8 @@
 # ⚡ Quick Start Guide
 
-**PyVirus - Oxynos Antivirus Scanner Pro**
+**PyVirus - Mert Ulupınar Antivirus Scanner Pro**
 
-Created by Oxynos 🛡️
+Created by Mert Ulupınar 🛡️
 
 ---
 
@@ -217,7 +217,7 @@ git push origin feature/amazing
 
 <div align="center">
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 Happy Secure Coding! 🛡️
 

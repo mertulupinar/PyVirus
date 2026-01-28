@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ PyVirus - Oxynos Antivirus Scanner Pro
+# 🛡️ PyVirus - Mert Ulupınar Antivirus Scanner Pro
 
 [![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![PyQt5](https://img.shields.io/badge/PyQt5-5.15+-green.svg)](https://pypi.org/project/PyQt5/)
@@ -9,7 +9,7 @@
 
 ### 🚀 Modern, Fast and Powerful Python Antivirus Scanner
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-documentation) • [Tests](#-tests)
 
@@ -36,7 +36,7 @@
 
 ## 🎯 Overview
 
-**PyVirus - Oxynos Antivirus Scanner Pro** is an enterprise-grade antivirus scanning solution
+**PyVirus - Mert Ulupınar Antivirus Scanner Pro** is an enterprise-grade antivirus scanning solution
 developed using modern Python technologies. It provides a powerful security solution with
 MD5 hash-based signature comparison, parallel file scanning, real-time logging, and a
 user-friendly PyQt5 interface.
@@ -650,7 +650,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 MIT License
 
-Copyright (c) 2025 Oxynos
+Copyright (c) 2025 Mert Ulupınar
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -661,7 +661,7 @@ in the Software without restriction...
 
 ## 📧 Contact
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 - 🌐 Website: [https://github.com/oxynos](https://github.com/oxynos)
 - 📧 Email: oxynos@example.com
@@ -692,9 +692,9 @@ If you like the project, don't forget to give it a ⭐!
 
 ### 💻 Happy Secure Coding!
 
-**PyVirus - Oxynos Antivirus Scanner Pro** 🛡️
+**PyVirus - Mert Ulupınar Antivirus Scanner Pro** 🛡️
 
-Made with ❤️ by Oxynos
+Made with ❤️ by Mert Ulupınar
 
 [⬆ Back to Top](#️-pyvirus---oxynos-antivirus-scanner-pro)
 

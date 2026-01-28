@@ -1,8 +1,8 @@
 # 🚀 GitHub Yayınlama Kılavuzu
 
-**PyVirus - Oxynos Antivirus Scanner Pro**
+**PyVirus - Mert Ulupınar Antivirus Scanner Pro**
 
-Created by Oxynos ⚡
+Created by Mert Ulupınar ⚡
 
 ---
 
@@ -117,7 +117,7 @@ See [README.md](https://github.com/KULLANICI_ADINIZ/pyvirus/blob/main/README.md)
 
 ### 🙏 Thank You
 
-Created with ❤️ by Oxynos
+Created with ❤️ by Mert Ulupınar
 ```
 
 4. **Publish release** butonuna tıkla
@@ -306,7 +306,7 @@ Projeniz artık GitHub'da yayınlanmaya hazır! 🎉
 
 <div align="center">
 
-**Created by Oxynos** ⚡
+**Created by Mert Ulupınar** ⚡
 
 [⬆ Başa Dön](#-github-yayınlama-kılavuzu)
 
